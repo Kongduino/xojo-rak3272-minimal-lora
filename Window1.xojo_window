@@ -10,7 +10,7 @@ Begin DesktopWindow Window1
    HasFullScreenButton=   False
    HasMaximizeButton=   True
    HasMinimizeButton=   True
-   Height          =   646
+   Height          =   596
    ImplicitInstance=   True
    MacProcID       =   0
    MaximumHeight   =   32000
@@ -182,7 +182,7 @@ Begin DesktopWindow Window1
       HasHorizontalScrollbar=   False
       HasVerticalScrollbar=   True
       HeadingIndex    =   -1
-      Height          =   289
+      Height          =   239
       Index           =   -2147483648
       InitialParent   =   ""
       InitialValue    =   ""
@@ -249,7 +249,7 @@ Begin DesktopWindow Window1
       TabPanelIndex   =   0
       TabStop         =   True
       Tooltip         =   ""
-      Top             =   321
+      Top             =   271
       Transparent     =   False
       Underline       =   False
       Visible         =   True
@@ -274,7 +274,7 @@ Begin DesktopWindow Window1
       FontName        =   "System"
       FontSize        =   0.0
       FontUnit        =   0
-      Height          =   99
+      Height          =   132
       Index           =   -2147483648
       InitialParent   =   ""
       Italic          =   False
@@ -350,7 +350,7 @@ Begin DesktopWindow Window1
          TabPanelIndex   =   0
          TabStop         =   True
          Text            =   "no ping set up"
-         TextAlignment   =   0
+         TextAlignment   =   2
          TextColor       =   &c000000
          Tooltip         =   ""
          Top             =   432
@@ -358,6 +358,38 @@ Begin DesktopWindow Window1
          Underline       =   False
          Visible         =   True
          Width           =   162
+      End
+      Begin DesktopButton pbSendMessage
+         AllowAutoDeactivate=   True
+         Bold            =   False
+         Cancel          =   False
+         Caption         =   "send message"
+         Default         =   False
+         Enabled         =   True
+         FontName        =   "System"
+         FontSize        =   0.0
+         FontUnit        =   0
+         Height          =   20
+         Index           =   -2147483648
+         InitialParent   =   "gbTools"
+         Italic          =   False
+         Left            =   29
+         LockBottom      =   False
+         LockedInPosition=   False
+         LockLeft        =   True
+         LockRight       =   False
+         LockTop         =   True
+         MacButtonStyle  =   0
+         Scope           =   0
+         TabIndex        =   2
+         TabPanelIndex   =   0
+         TabStop         =   True
+         Tooltip         =   ""
+         Top             =   464
+         Transparent     =   False
+         Underline       =   False
+         Visible         =   True
+         Width           =   183
       End
    End
    Begin Timer pingTimer
@@ -662,6 +694,47 @@ Begin DesktopWindow Window1
          Width           =   40
       End
    End
+   Begin DesktopLabel lbStatus
+      AllowAutoDeactivate=   True
+      Bold            =   False
+      Enabled         =   True
+      FontName        =   "System"
+      FontSize        =   0.0
+      FontUnit        =   0
+      Height          =   20
+      Index           =   -2147483648
+      Italic          =   False
+      Left            =   234
+      LockBottom      =   True
+      LockedInPosition=   False
+      LockLeft        =   True
+      LockRight       =   True
+      LockTop         =   False
+      Multiline       =   False
+      Scope           =   0
+      Selectable      =   False
+      TabIndex        =   10
+      TabPanelIndex   =   0
+      TabStop         =   True
+      Text            =   "--"
+      TextAlignment   =   0
+      TextColor       =   &c000000
+      Tooltip         =   ""
+      Top             =   576
+      Transparent     =   False
+      Underline       =   False
+      Visible         =   True
+      Width           =   532
+   End
+   Begin Timer tmStatus
+      Enabled         =   True
+      Index           =   -2147483648
+      LockedInPosition=   False
+      Period          =   300
+      RunMode         =   2
+      Scope           =   0
+      TabPanelIndex   =   0
+   End
 End
 #tag EndDesktopWindow
 
@@ -686,7 +759,6 @@ End
 		  RSSIregex.SearchPattern="^\+EVT:(.+), (.+), (.+)+$"
 		  RSSIregex.Options.Greedy=True
 		  
-		  me.Left=0
 		  lbPorts.SetFocus()
 		  
 		End Sub
@@ -784,6 +856,7 @@ End
 		Sub logSys(txt As String)
 		  lbSys.AddRow txt
 		  lbSys.ScrollPosition=lbSys.RowCount
+		  lbSys.Refresh()
 		End Sub
 	#tag EndMethod
 
@@ -825,7 +898,7 @@ End
 	#tag EndProperty
 
 	#tag Property, Flags = &h0
-		pingCount As Integer = 0
+		pingCount As Integer = -1
 	#tag EndProperty
 
 	#tag Property, Flags = &h0
@@ -927,6 +1000,7 @@ End
 		  commandsStack.Append "AT+PSEND=333333"
 		  commandsStack.Append "AT+PRECV=65535"
 		  commandTimer.RunMode=Timer.RunModes.Multiple
+		  
 		  
 		End Sub
 	#tag EndEvent
@@ -1039,6 +1113,33 @@ End
 		End Sub
 	#tag EndEvent
 #tag EndEvents
+#tag Events pbSendMessage
+	#tag Event
+		Sub Pressed()
+		  SendMessageWindow.RunWindow()
+		  
+		  If Not SendMessageWindow.Valid Then 
+		    Return
+		  End If
+		  
+		  Dim msg As String
+		  msg = SendMessageWindow.tfMessage.Text.Trim()
+		  If msg = "" Then
+		    Return
+		  End If
+		  
+		  msg = "AT+PSEND="+Hexify(msg)
+		  
+		  commandTimer.RunMode=Timer.RunModes.Off
+		  commandsStack.Append "AT+PRECV=0"
+		  commandsStack.Append msg
+		  commandsStack.Append "AT+PRECV=65535"
+		  
+		  commandTimer.RunMode=Timer.RunModes.Multiple
+		  
+		End Sub
+	#tag EndEvent
+#tag EndEvents
 #tag Events pingTimer
 	#tag Event
 		Sub Action()
@@ -1051,6 +1152,29 @@ End
 		Sub Opening()
 		  lbPorts.SetFocus()
 		  
+		End Sub
+	#tag EndEvent
+#tag EndEvents
+#tag Events tmStatus
+	#tag Event
+		Sub Action()
+		  Dim s As String
+		  
+		  s = "commandTimer: O"
+		  If commandTimer.RunMode=Timer.RunModes.Off Then
+		    s=s+"FF"
+		  Else
+		    s=s+"N. Stack height: "+Str(commandsStack.Ubound)
+		  End If
+		  
+		  s = s + ". pingTimer: O"
+		  If pingTimer.RunMode=Timer.RunModes.Off Then
+		    s=s+"FF"
+		  Else
+		    s=s+"N. Period: "+Str(pingTimer.Period/1000)+". pingCount: "+Str(pingCount)
+		  End If
+		  
+		  lbStatus.Text=s
 		End Sub
 	#tag EndEvent
 #tag EndEvents
@@ -1264,8 +1388,8 @@ End
 		Visible=true
 		Group="Background"
 		InitialValue="&hFFFFFF"
-		Type="Color"
-		EditorType="Color"
+		Type="ColorGroup"
+		EditorType="ColorGroup"
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Backdrop"
@@ -1280,7 +1404,7 @@ End
 		Visible=true
 		Group="Menus"
 		InitialValue=""
-		Type="MenuBar"
+		Type="DesktopMenuBar"
 		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
@@ -1314,5 +1438,13 @@ End
 		InitialValue=""
 		Type="String"
 		EditorType="MultiLineEditor"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="pingCount"
+		Visible=false
+		Group="Behavior"
+		InitialValue="0"
+		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 #tag EndViewBehavior

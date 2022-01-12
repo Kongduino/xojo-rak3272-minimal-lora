@@ -10,6 +10,7 @@ MultiImage=connect;connect.xojo_image;&h000000005F3CF7FF;&h0000000000000000;fals
 MenuBar=MenuBar1;MenuBar1.xojo_menu;&h000000006AB1A7FF;&h0000000000000000;false
 MultiImage=disconnect;disconnect.xojo_image;&h000000004694C7FF;&h0000000000000000;false
 Module=Module1;Module1.xojo_code;&h000000002BB017FF;&h0000000000000000;false
+DesktopWindow=SendMessageWindow;SendMessageWindow.xojo_window;&h0000000067C42FFF;&h0000000000000000;false
 AppMenuBar=MenuBar1
 MajorVersion=1
 MinorVersion=0
