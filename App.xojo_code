@@ -39,6 +39,7 @@ Inherits DesktopApplication
 		  
 		  w.Left=0
 		  w.Top=55
+		  
 		  w.Show()
 		  
 		End Sub

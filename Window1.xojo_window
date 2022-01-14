@@ -760,6 +760,24 @@ End
 		  RSSIregex.Options.Greedy=True
 		  
 		  lbPorts.SetFocus()
+		  Dim f, g As FolderItem
+		  f = Module1.GetPrefsFile()
+		  
+		  If Not f.Exists Then
+		    Module1.CreatePrefs(f, Self)
+		  Else
+		    If Not f.IsFolder() Then
+		      MessageBox "Warning!"+EndOfLine+EndOfLine+f.Name+" is not a folder! I can not proceed with prefs!"
+		      Return
+		    End If
+		    g=f.Child("prefs.json")
+		    If Not g.Exists Then
+		      Module1.CreatePrefs(f, Self)
+		    Else
+		      Module1.ReadPrefs(Self, g)
+		    End If
+		  End If
+		  CanTouchPrefs = True
 		  
 		End Sub
 	#tag EndEvent
@@ -886,11 +904,23 @@ End
 
 
 	#tag Property, Flags = &h0
+		CanTouchPrefs As Boolean = False
+	#tag EndProperty
+
+	#tag Property, Flags = &h0
 		commandsStack() As String
 	#tag EndProperty
 
 	#tag Property, Flags = &h0
+		freqChanged As Boolean = False
+	#tag EndProperty
+
+	#tag Property, Flags = &h0
 		LastCommand As String
+	#tag EndProperty
+
+	#tag Property, Flags = &h0
+		lastSerialPortName As String
 	#tag EndProperty
 
 	#tag Property, Flags = &h0
@@ -979,7 +1009,10 @@ End
 		  App.CallingWindow=Self
 		  App.RefreshMenuBar()
 		  
-		  Self.Title=SerialDevice.At(lbPorts.SelectedRowIndex).Name
+		  Self.Title = SerialDevice.At(lbPorts.SelectedRowIndex).Name
+		  lastSerialPortName = Self.Title
+		  CreatePrefs(GetPrefsFile(), Self)
+		  
 		  Redim commandsStack(-1)
 		  commandsStack.Append "AT+NWM=0"
 		  Dim freq As Double
@@ -1151,6 +1184,44 @@ End
 	#tag Event
 		Sub Opening()
 		  lbPorts.SetFocus()
+		  
+		End Sub
+	#tag EndEvent
+	#tag Event
+		Sub TextChanged()
+		  freqChanged = True
+		End Sub
+	#tag EndEvent
+	#tag Event
+		Sub FocusLost()
+		  iF freqChanged Then
+		    CreatePrefs(GetPrefsFile(), Self)
+		    freqChanged = False
+		  End If
+		  
+		End Sub
+	#tag EndEvent
+#tag EndEvents
+#tag Events pmSF
+	#tag Event
+		Sub SelectionChanged(item As DesktopMenuItem)
+		  CreatePrefs(GetPrefsFile(), Self)
+		  
+		End Sub
+	#tag EndEvent
+#tag EndEvents
+#tag Events pmBW
+	#tag Event
+		Sub SelectionChanged(item As DesktopMenuItem)
+		  CreatePrefs(GetPrefsFile(), Self)
+		  
+		End Sub
+	#tag EndEvent
+#tag EndEvents
+#tag Events pmBaud
+	#tag Event
+		Sub SelectionChanged(item As DesktopMenuItem)
+		  CreatePrefs(GetPrefsFile(), Self)
 		  
 		End Sub
 	#tag EndEvent
